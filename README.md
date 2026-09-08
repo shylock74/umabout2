@@ -1,39 +1,18 @@
 # UMAbout2
 
-A reusable Swift package library generated with **SUP (Start Up Project)**.
+UMAbout2 is a modern, standalone Swift package designed for macOS applications to display the "About" screen.
 
-## Overview
-`UMAbout2` is a Swift Package library built for macOS 11.0+.
+## Features
+- **Video Support**: Automatically detects and plays `about.mp4` from the main bundle.
+- **Image Fallback**: If no video is found, it seamlessly falls back to a provided static image.
+- **Typewriter Effect**: Includes a highly optimized cyclic typing animation for displaying an array of information strings, avoiding main thread congestion by leveraging background GCD queues.
+- **SwiftUI Native**: Built entirely in SwiftUI, utilizing the new `@Observable` macro for reactive state management.
 
-## Installation
-
-### Swift Package Manager
-Add `UMAbout2` as a dependency in your `Package.swift`:
-
-```swift
-dependencies: [
-	.package ( url: "https://github.com/shylock74/UMAbout2.git", branch: "main" )
-]
-```
-
-Then add `UMAbout2` to your target dependencies:
+## Usage
+Simply instantiate the view model and pass it into the main view along with your fallback image and title.
 
 ```swift
-.target (
-	name: "YourTarget",
-	dependencies: [
-		.product ( name: "UMAbout2", package: "UMAbout2" )
-	]
-)
-```
-
-## Integrated Dependencies
-- **UMUIControls** (Remote: [https://github.com/shylock74/UMUIControls](https://github.com/shylock74/UMUIControls)) - Branch: main
-
-## Requirements
-- macOS 11.0+
-- Swift 5.9+
-- Xcode 15.0 or later
-
-## License
-Copyright © 2026 Ulti.Media. All rights reserved.
+let viewModel = Ab2AboutViewModel (texts: ["Version 1.0", "Created by Ulti.Media"])
+Ab2AboutView (title: "My App",
+	fallbackImage: Image ("default_about"),
+	viewModel: viewModel)
