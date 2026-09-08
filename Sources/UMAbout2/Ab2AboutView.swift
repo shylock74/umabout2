@@ -58,3 +58,46 @@ public struct Ab2AboutView : View {
 		.padding ()
 	}
 }
+
+
+
+#if canImport(AppKit)
+import AppKit
+import SwiftUI
+
+extension Ab2AboutView {
+	// Aggiunge la funzione statica 'show' per compatibilità con l'API precedente e gestione della finestra.
+	
+	public static func show (appName : String,
+							 image : Image,
+							 textList : [String]) {
+		// Inizializza il ViewModel e la View.
+		let viewModel = Ab2AboutViewModel (texts: textList)
+		let aboutView = Ab2AboutView (title: appName,
+									  fallbackImage: image,
+									  viewModel: viewModel)
+		
+		// Crea un NSHostingView per la view SwiftUI.
+		let hostingView = NSHostingView (rootView: aboutView)
+		
+		// Crea e configura la finestra di macOS.
+		let window = NSWindow (
+			contentRect: NSRect (x: 0,
+								 y: 0,
+								 width: 960,
+								 height: 640),
+			styleMask: [.titled, .closable, .fullSizeContentView],
+			backing: .buffered,
+			defer: false
+		)
+		
+		window.title = "About \(appName)"
+		window.contentView = hostingView
+		window.center ()
+		window.isReleasedWhenClosed = false
+		
+		// Mostra la finestra portandola in primo piano.
+		window.makeKeyAndOrderFront (nil)
+	}
+}
+#endif
