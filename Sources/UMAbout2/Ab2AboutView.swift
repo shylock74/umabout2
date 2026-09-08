@@ -38,13 +38,14 @@ public struct Ab2AboutView : View {
 				
 				// Sostituito VideoPlayer di SwiftUI con il nostro componente personalizzato e ottimizzato
 				Ab2VideoPlayerView (videoURL: url)
-					.aspectRatio (contentMode: .fit)
+					.frame (maxWidth: .infinity)
 					.clipShape (RoundedRectangle (cornerRadius: 10))
 				
 			} else {
 				fallbackImage
 					.resizable ()
 					.aspectRatio (contentMode: .fit)
+					.frame (maxWidth: .infinity)
 					.clipShape (RoundedRectangle (cornerRadius: 10))
 			}
 			
@@ -54,13 +55,14 @@ public struct Ab2AboutView : View {
 			Spacer ()
 				.frame (height: 10)
 			
-			Text ("@ \(Calendar.current.component (.year, from: Date ())) Ulti.Media")
+			// String(...) evita il separatore delle migliaia che Text applicherebbe all'Int (es. "2.026").
+			Text ("@ " + String (Calendar.current.component (.year, from: Date ())) + " Ulti.Media")
 				.font (.caption)
 				.foregroundColor (.gray)
 		}
-		.frame (width: 960,
-				height: 640)
+		.frame (width: 960)
 		.padding ()
+		.background (Color.black)
 	}
 }
 
@@ -82,8 +84,9 @@ extension Ab2AboutView {
 									  fallbackImage: image,
 									  viewModel: viewModel)
 		
-		// Crea un NSHostingView per la view SwiftUI.
-		let hostingView = NSHostingView (rootView: aboutView)
+		// Usa un NSHostingController così la finestra si adatta all'altezza reale del contenuto (video compreso).
+		let hostingController = NSHostingController (rootView: aboutView)
+		hostingController.sizingOptions = [ .preferredContentSize ]
 		
 		// Crea e configura la finestra di macOS.
 		let window = NSWindow (
@@ -97,7 +100,11 @@ extension Ab2AboutView {
 		)
 		
 		window.title = "About \(appName)"
-		window.contentView = hostingView
+		
+		// Sfondo finestra nero, con aspetto scuro per mantenere leggibili i testi.
+		window.backgroundColor = .black
+		window.appearance = NSAppearance (named: .darkAqua)
+		window.contentViewController = hostingController
 		window.center ()
 		window.isReleasedWhenClosed = false
 		
