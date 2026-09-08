@@ -14,11 +14,12 @@ public struct Ab2VideoPlayerView : View {
 	// Video a piena larghezza: la vista assume l'aspect ratio del filmato, così non restano bande nere sopra e sotto.
 
 	public var videoURL : URL // L'URL del video da riprodurre.
+	public var aspectRatio : CGFloat? // Rapporto larghezza/altezza noto; se nil si usa 16:9.
 
-	@State private var aspectRatio : CGFloat? // Rapporto larghezza/altezza letto dalla traccia video.
-
-	public init (videoURL : URL) {
+	public init (videoURL : URL,
+		aspectRatio : CGFloat? = nil) {
 		self.videoURL = videoURL
+		self.aspectRatio = aspectRatio
 	}
 
 	public var body : some View {
@@ -26,33 +27,6 @@ public struct Ab2VideoPlayerView : View {
 			.aspectRatio (aspectRatio ?? (16.0 / 9.0),
 				contentMode: .fit)
 			.frame (maxWidth: .infinity)
-			.task (id: videoURL) {
-				// Carica l'aspect ratio reale del video così il contenitore combacia con l'immagine.
-				await loadAspectRatio ()
-			}
-	}
-
-	private func loadAspectRatio () async {
-		// Legge naturalSize e preferredTransform della prima traccia video.
-		let asset = AVURLAsset (url: videoURL)
-
-		guard let track = try? await asset.loadTracks (withMediaType: .video).first,
-			  let (naturalSize, transform) = try? await track.load (.naturalSize,
-				.preferredTransform) else {
-			return
-		}
-
-		// Applica la trasformazione per gestire i video ruotati.
-		let size = naturalSize.applying (transform)
-		let width = abs (size.width)
-		let height = abs (size.height)
-
-		guard width > 0,
-			  height > 0 else {
-			return
-		}
-
-		aspectRatio = width / height
 	}
 }
 

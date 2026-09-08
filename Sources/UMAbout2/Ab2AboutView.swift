@@ -37,15 +37,18 @@ public struct Ab2AboutView : View {
 			   let url = viewModel.videoURL {
 				
 				// Sostituito VideoPlayer di SwiftUI con il nostro componente personalizzato e ottimizzato
-				Ab2VideoPlayerView (videoURL: url)
+				Ab2VideoPlayerView (videoURL: url,
+					aspectRatio: viewModel.videoAspectRatio)
 					.frame (maxWidth: .infinity)
 					.clipShape (RoundedRectangle (cornerRadius: 10))
 				
 			} else {
+				// maxHeight limita l'immagine: senza altezza fissa della finestra crescerebbe alla sua dimensione naturale.
 				fallbackImage
 					.resizable ()
 					.aspectRatio (contentMode: .fit)
-					.frame (maxWidth: .infinity)
+					.frame (maxWidth: .infinity,
+						maxHeight: 540)
 					.clipShape (RoundedRectangle (cornerRadius: 10))
 			}
 			
@@ -84,9 +87,10 @@ extension Ab2AboutView {
 									  fallbackImage: image,
 									  viewModel: viewModel)
 		
-		// Usa un NSHostingController così la finestra si adatta all'altezza reale del contenuto (video compreso).
-		let hostingController = NSHostingController (rootView: aboutView)
-		hostingController.sizingOptions = [ .preferredContentSize ]
+		// NSHostingView semplice: la finestra viene ridimensionata a mano una sola volta,
+		// perché il sizing automatico innesca un loop di Update Constraints e fa crashare l'app.
+		let hostingView = NSHostingView (rootView: aboutView)
+		hostingView.layoutSubtreeIfNeeded ()
 		
 		// Crea e configura la finestra di macOS.
 		let window = NSWindow (
@@ -104,12 +108,22 @@ extension Ab2AboutView {
 		// Sfondo finestra nero, con aspetto scuro per mantenere leggibili i testi.
 		window.backgroundColor = .black
 		window.appearance = NSAppearance (named: .darkAqua)
-		window.contentViewController = hostingController
+		window.contentView = hostingView
+		window.setContentSize (hostingView.fittingSize)
 		window.center ()
 		window.isReleasedWhenClosed = false
 		
 		// Mostra la finestra portandola in primo piano.
 		window.makeKeyAndOrderFront (nil)
+		
+		// Quando l'aspect ratio del video è noto, adatta la finestra una volta sola.
+		Task { @MainActor in
+			await viewModel.waitForVideoInfo ()
+			
+			hostingView.layoutSubtreeIfNeeded ()
+			window.setContentSize (hostingView.fittingSize)
+			window.center ()
+		}
 	}
 }
 #endif
