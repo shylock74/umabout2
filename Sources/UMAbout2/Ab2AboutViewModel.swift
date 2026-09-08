@@ -29,8 +29,19 @@ public class Ab2AboutViewModel {
 
 	public func checkVideoAvailability () {
 		// Scans the main bundle for 'about.mp4' to enable video playback.
+		// La ricerca nel bundle è sincrona: così hasVideo è già corretto al primo layout
+		// e l'immagine di fallback non compare mai, nemmeno per un frame.
+		guard let url = Bundle.main.url (forResource: "about",
+			withExtension: "mp4") else {
+			return
+		}
+
+		self.videoURL = url
+		self.hasVideo = true
+
+		// Solo l'aspect ratio resta asincrono, perché richiede di aprire l'asset.
 		self.loadTask = Task { @MainActor [weak self] in
-			await self?.loadVideoInfo ()
+			self?.videoAspectRatio = await Ab2AboutViewModel.aspectRatio (of: url)
 		}
 	}
 
@@ -38,22 +49,6 @@ public class Ab2AboutViewModel {
 	public func waitForVideoInfo () async {
 		// Attende la fine del caricamento avviato dall'init, senza ripeterlo.
 		await self.loadTask?.value
-	}
-
-	@MainActor
-	private func loadVideoInfo () async {
-		// Trova il video e ne legge l'aspect ratio, poi pubblica tutto in un colpo solo
-		// per evitare passaggi di layout intermedi.
-		guard let url = Bundle.main.url (forResource: "about",
-			withExtension: "mp4") else {
-			return
-		}
-
-		let ratio = await Ab2AboutViewModel.aspectRatio (of: url)
-
-		self.videoURL = url
-		self.videoAspectRatio = ratio
-		self.hasVideo = true
 	}
 
 	private static func aspectRatio (of url : URL) async -> CGFloat? {
