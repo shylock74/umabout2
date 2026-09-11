@@ -16,7 +16,7 @@ public struct Ab2AboutView : View {
 	
 	public var title : String // App title to show at the top.
 	public var fallbackImage : Image // Image to use when 'about.mp4' is missing.
-	public var viewModel : Ab2AboutViewModel // State holder for video and text data.
+	@ObservedObject public var viewModel : Ab2AboutViewModel // State holder for video and text data.
 	
 	public init (title : String,
 				 fallbackImage : Image,

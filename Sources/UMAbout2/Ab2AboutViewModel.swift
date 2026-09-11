@@ -7,19 +7,20 @@
 
 
 import Foundation
-import Observation
 import AVFoundation
+import SwiftUI
 
-@Observable
-public class Ab2AboutViewModel {
+// `ObservableObject` e non la macro `@Observable`: quest'ultima richiede macOS 14,
+// e il package deve linkare anche nelle app ferme a Monterey.
+public class Ab2AboutViewModel: ObservableObject {
 	// Manages the state for the about window, finding the video or falling back to images.
 
-	public var textList : [String] // List of strings to cycle through the typing animation.
-	public var hasVideo : Bool = false // Boolean flag to decide whether to render the VideoPlayer.
-	public var videoURL : URL? // URL to the local video file, if present.
-	public var videoAspectRatio : CGFloat? // Rapporto larghezza/altezza del video, per dimensionare la finestra.
+	@Published public var textList : [String] // List of strings to cycle through the typing animation.
+	@Published public var hasVideo : Bool = false // Boolean flag to decide whether to render the VideoPlayer.
+	@Published public var videoURL : URL? // URL to the local video file, if present.
+	@Published public var videoAspectRatio : CGFloat? // Rapporto larghezza/altezza del video, per dimensionare la finestra.
 
-	@ObservationIgnored private var loadTask : Task<Void, Never>? // Caricamento in corso delle informazioni video.
+	private var loadTask : Task<Void, Never>? // Caricamento in corso delle informazioni video.
 
 	public init (texts : [String]) {
 		// Setup the view model with the initial text array and checks for the video.
@@ -55,10 +56,24 @@ public class Ab2AboutViewModel {
 		// Legge naturalSize e preferredTransform della prima traccia video.
 		let asset = AVURLAsset (url: url)
 
-		guard let track = try? await asset.loadTracks (withMediaType: .video).first,
-			  let (naturalSize, transform) = try? await track.load (.naturalSize,
-				.preferredTransform) else {
-			return nil
+		let naturalSize : CGSize
+		let transform : CGAffineTransform
+
+		if #available (macOS 13.0, *) {
+			guard let track = try? await asset.loadTracks (withMediaType: .video).first,
+				  let loaded = try? await track.load (.naturalSize,
+					.preferredTransform) else {
+				return nil
+			}
+			(naturalSize, transform) = loaded
+		} else {
+			// Le proprietà sincrone sono deprecate da macOS 13, ma su Monterey
+			// sono l'unico modo di leggere la traccia.
+			guard let track = asset.tracks (withMediaType: .video).first else {
+				return nil
+			}
+			naturalSize = track.naturalSize
+			transform = track.preferredTransform
 		}
 
 		// Applica la trasformazione per gestire i video ruotati.
