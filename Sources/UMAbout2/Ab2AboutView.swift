@@ -59,9 +59,27 @@ public struct Ab2AboutView : View {
 				.frame (height: 10)
 			
 			// String(...) evita il separatore delle migliaia che Text applicherebbe all'Int (es. "2.026").
-			Text ("@ " + String (Calendar.current.component (.year, from: Date ())) + " Ulti.Media")
-				.font (.caption)
-				.foregroundColor (.gray)
+			HStack (alignment: .center, spacing: 8) {
+				Text ("@ " + String (Calendar.current.component (.year, from: Date ())) + " Ulti.Media")
+					.font (.caption)
+					.foregroundColor (.gray)
+
+				if let versionTag = viewModel.versionTag {
+					Text (versionTag)
+						.font (.caption2.monospacedDigit ())
+						.foregroundColor (.gray)
+						.padding (.horizontal, 7)
+						.padding (.vertical, 2)
+						.background (
+							Capsule ()
+								.fill (Color.white.opacity (0.10))
+						)
+						.overlay (
+							Capsule ()
+								.stroke (Color.white.opacity (0.18), lineWidth: 0.5)
+						)
+				}
+			}
 		}
 		.frame (width: 960)
 		.padding ()

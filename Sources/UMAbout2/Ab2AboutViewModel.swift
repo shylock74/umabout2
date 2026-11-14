@@ -19,12 +19,15 @@ public class Ab2AboutViewModel: ObservableObject {
 	@Published public var hasVideo : Bool = false // Boolean flag to decide whether to render the VideoPlayer.
 	@Published public var videoURL : URL? // URL to the local video file, if present.
 	@Published public var videoAspectRatio : CGFloat? // Rapporto larghezza/altezza del video, per dimensionare la finestra.
+	@Published public var versionTag : String? // Stringa formattata con versione e build del bundle.
 
 	private var loadTask : Task<Void, Never>? // Caricamento in corso delle informazioni video.
 
-	public init (texts : [String]) {
+	public init (texts : [String],
+				 bundle : Bundle = .main) {
 		// Setup the view model with the initial text array and checks for the video.
 		self.textList = texts
+		self.versionTag = Ab2AboutViewModel.versionTag (from: bundle)
 		self.checkVideoAvailability ()
 	}
 
@@ -50,6 +53,33 @@ public class Ab2AboutViewModel: ObservableObject {
 	public func waitForVideoInfo () async {
 		// Attende la fine del caricamento avviato dall'init, senza ripeterlo.
 		await self.loadTask?.value
+	}
+
+	public static func versionTag (from bundle : Bundle) -> String? {
+		// Legge versione e build dal bundle principale dell'app.
+		let version = bundle.infoDictionary? ["CFBundleShortVersionString"] as? String
+		let build = bundle.infoDictionary? ["CFBundleVersion"] as? String
+		return formatVersionTag (version: version, build: build)
+	}
+
+	public static func formatVersionTag (version : String?,
+										 build : String?) -> String? {
+		// Compone l'etichetta compatta per il capsule tag (es. "v1.2.0 (45)").
+		let cleanVersion = version?.trimmingCharacters (in: .whitespacesAndNewlines)
+		let cleanBuild = build?.trimmingCharacters (in: .whitespacesAndNewlines)
+
+		switch (cleanVersion, cleanBuild) {
+		case let (v?, b?) where !v.isEmpty && !b.isEmpty:
+			let prefix = v.lowercased ().hasPrefix ("v") ? "" : "v"
+			return "\(prefix)\(v) (\(b))"
+		case let (v?, _) where !v.isEmpty:
+			let prefix = v.lowercased ().hasPrefix ("v") ? "" : "v"
+			return "\(prefix)\(v)"
+		case let (_, b?) where !b.isEmpty:
+			return "build \(b)"
+		default:
+			return nil
+		}
 	}
 
 	private static func aspectRatio (of url : URL) async -> CGFloat? {
